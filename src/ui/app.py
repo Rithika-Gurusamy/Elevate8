@@ -245,6 +245,109 @@ st.markdown("""
         flex-direction: column;
     }
 
+    /* ── Streamlit Built-in Deploy Button ── */
+    div[data-testid="stHeaderAction"] button, 
+    button[data-testid="stHeaderDeployButton"], 
+    .stDeployButton > button {
+        background: linear-gradient(135deg, #238636 0%, #2ea44f 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(46, 164, 79, 0.4) !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 6px 16px !important;
+        box-shadow: 0 4px 12px rgba(46, 164, 79, 0.3) !important;
+        transition: all 0.3s ease !important;
+        text-transform: uppercase !important;
+        font-size: 12px !important;
+        letter-spacing: 0.5px !important;
+    }
+    div[data-testid="stHeaderAction"] button:hover, 
+    button[data-testid="stHeaderDeployButton"]:hover, 
+    .stDeployButton > button:hover {
+        background: linear-gradient(135deg, #2ea44f 0%, #3fb950 100%) !important;
+        box-shadow: 0 6px 16px rgba(63, 185, 80, 0.5) !important;
+        transform: translateY(-1px) !important;
+        border-color: rgba(63, 185, 80, 0.6) !important;
+    }
+
+    /* ── Streamlit Tabs Overrides ── */
+    button[data-baseweb="tab"] {
+        color: #8b949e !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+        transition: all 0.2s ease !important;
+        background: transparent !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #58a6ff !important;
+        border-bottom: 2px solid #58a6ff !important;
+        background: rgba(88, 166, 255, 0.05) !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #e6edf3 !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    /* ── Streamlit Selectbox Overrides ── */
+    div[data-baseweb="select"] > div {
+        background-color: rgba(22, 27, 34, 0.8) !important;
+        border: 1px solid rgba(48, 54, 61, 0.6) !important;
+        border-radius: 8px !important;
+        color: #e6edf3 !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-baseweb="select"] > div:hover {
+        border-color: rgba(88, 166, 255, 0.4) !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #e6edf3 !important;
+    }
+    div[data-baseweb="popover"] {
+        background-color: #0d1117 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="menu"] {
+        background-color: #0d1117 !important;
+        color: #e6edf3 !important;
+    }
+    div[data-baseweb="option"] {
+        background-color: transparent !important;
+        color: #c9d1d9 !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-baseweb="option"]:hover, 
+    div[data-baseweb="option"][aria-selected="true"] {
+        background-color: rgba(88, 166, 255, 0.15) !important;
+        color: #f0f6fc !important;
+    }
+
+    /* ── Streamlit Custom Button/Download Styling ── */
+    div.stButton > button, 
+    div.stDownloadButton > button {
+        background: linear-gradient(135deg, rgba(31, 111, 235, 0.15) 0%, rgba(136, 58, 234, 0.15) 100%) !important;
+        color: #e6edf3 !important;
+        border: 1px solid rgba(88, 166, 255, 0.3) !important;
+        border-radius: 8px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+    div.stButton > button:hover, 
+    div.stDownloadButton > button:hover {
+        border-color: rgba(88, 166, 255, 0.8) !important;
+        box-shadow: 0 4px 16px rgba(88, 166, 255, 0.2) !important;
+        transform: translateY(-2px) !important;
+        color: #ffffff !important;
+    }
+    div.stButton > button:active, 
+    div.stDownloadButton > button:active {
+        transform: translateY(0) !important;
+    }
+
     /* Hide Streamlit branding */
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
@@ -702,15 +805,123 @@ elif menu == "📝 Diff Viewer":
             # Inject dark theme into the HTML diff
             dark_css = """
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                
                 body { background: #0d1117 !important; color: #e6edf3 !important; font-family: 'Consolas', monospace; }
                 table.diff { background: #0d1117; border-collapse: collapse; width: 100%; font-size: 12px; }
-                td { padding: 2px 8px; border: 1px solid #21262d; }
+                td { padding: 4px 8px; border: 1px solid #21262d; }
                 .diff_header { background: #161b22; color: #8b949e; }
-                .diff_next { background: #161b22; }
+                
+                /* Diff Navigation Buttons styling */
+                .diff_next { background: #161b22; text-align: center; }
+                .diff_next a {
+                    display: inline-block !important;
+                    padding: 3px 8px !important;
+                    background: linear-gradient(135deg, #1f6feb 0%, #38bdf8 100%) !important;
+                    color: #ffffff !important;
+                    text-decoration: none !important;
+                    border-radius: 4px !important;
+                    font-size: 10px !important;
+                    font-weight: bold !important;
+                    text-transform: uppercase !important;
+                    transition: all 0.2s ease-in-out !important;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
+                    margin: 1px !important;
+                    border: 1px solid rgba(88, 166, 255, 0.4) !important;
+                }
+                .diff_next a:hover {
+                    background: linear-gradient(135deg, #38bdf8 0%, #1f6feb 100%) !important;
+                    transform: scale(1.1) translateY(-1px) !important;
+                    box-shadow: 0 4px 8px rgba(56, 189, 248, 0.4) !important;
+                    color: #ffffff !important;
+                }
+                
                 .diff_add { background: rgba(63,185,80,0.15); color: #3fb950; }
                 .diff_chg { background: rgba(210,153,34,0.15); color: #d29922; }
                 .diff_sub { background: rgba(248,81,73,0.15); color: #f85149; }
                 td:first-child, td:nth-child(2) { color: #484f58; text-align: right; width: 40px; }
+                
+                /* Legends box container styling */
+                table[summary="Legends"] {
+                    background: rgba(22, 27, 34, 0.8) !important;
+                    backdrop-filter: blur(12px) !important;
+                    -webkit-backdrop-filter: blur(12px) !important;
+                    border: 1px solid rgba(48, 54, 61, 0.7) !important;
+                    border-radius: 12px !important;
+                    margin: 32px auto 16px auto !important;
+                    max-width: 900px !important;
+                    width: 100% !important;
+                    color: #e6edf3 !important;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+                    border-collapse: separate !important;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+                    overflow: hidden !important;
+                }
+                table[summary="Legends"] th {
+                    background: linear-gradient(90deg, #161b22, #21262d) !important;
+                    color: #f0f6fc !important;
+                    font-size: 14px !important;
+                    font-weight: 600 !important;
+                    letter-spacing: 0.5px !important;
+                    padding: 12px 20px !important;
+                    border-bottom: 1px solid rgba(48, 54, 61, 0.6) !important;
+                    text-align: left !important;
+                }
+                table[summary="Legends"] td {
+                    border: none !important;
+                    padding: 16px 20px !important;
+                }
+                
+                /* Inside Legends tables styling */
+                table[summary="Colors"], table[summary="Links"] {
+                    background: transparent !important;
+                    border-collapse: collapse !important;
+                    width: 100% !important;
+                }
+                table[summary="Colors"] th, table[summary="Links"] th {
+                    border-bottom: 1px solid rgba(48, 54, 61, 0.4) !important;
+                    color: #8b949e !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 1px !important;
+                    padding-bottom: 8px !important;
+                    background: transparent !important;
+                }
+                table[summary="Colors"] td {
+                    padding: 6px 12px !important;
+                    border-radius: 6px !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    text-align: center !important;
+                    margin-top: 8px !important;
+                    display: inline-block !important;
+                    width: 110px !important;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+                }
+                
+                table[summary="Colors"] td.diff_add {
+                    background: rgba(63, 185, 80, 0.15) !important;
+                    color: #3fb950 !important;
+                    border: 1px solid rgba(63, 185, 80, 0.3) !important;
+                }
+                table[summary="Colors"] td.diff_chg {
+                    background: rgba(210, 153, 34, 0.15) !important;
+                    color: #d29922 !important;
+                    border: 1px solid rgba(210, 153, 34, 0.3) !important;
+                }
+                table[summary="Colors"] td.diff_sub {
+                    background: rgba(248, 81, 73, 0.15) !important;
+                    color: #f85149 !important;
+                    border: 1px solid rgba(248, 81, 73, 0.3) !important;
+                }
+                
+                table[summary="Links"] td {
+                    color: #c9d1d9 !important;
+                    font-size: 13px !important;
+                    line-height: 1.6 !important;
+                    padding: 8px 0 !important;
+                }
             </style>
             """
             html_content = html_content.replace("</head>", dark_css + "</head>")
