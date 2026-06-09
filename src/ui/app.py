@@ -245,10 +245,20 @@ st.markdown("""
         flex-direction: column;
     }
 
+    /* ── Streamlit Header Background Override ── */
+    header[data-testid="stHeader"], 
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+
     /* ── Streamlit Built-in Deploy Button ── */
     div[data-testid="stHeaderAction"] button, 
+    div[data-testid="stHeaderAction"] a,
     button[data-testid="stHeaderDeployButton"], 
-    .stDeployButton > button {
+    a[data-testid="stHeaderDeployButton"],
+    .stDeployButton > button,
+    .stDeployButton > a {
         background: linear-gradient(135deg, #238636 0%, #2ea44f 100%) !important;
         color: #ffffff !important;
         border: 1px solid rgba(46, 164, 79, 0.4) !important;
@@ -260,14 +270,22 @@ st.markdown("""
         text-transform: uppercase !important;
         font-size: 12px !important;
         letter-spacing: 0.5px !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     div[data-testid="stHeaderAction"] button:hover, 
+    div[data-testid="stHeaderAction"] a:hover, 
     button[data-testid="stHeaderDeployButton"]:hover, 
-    .stDeployButton > button:hover {
+    a[data-testid="stHeaderDeployButton"]:hover,
+    .stDeployButton > button:hover,
+    .stDeployButton > a:hover {
         background: linear-gradient(135deg, #2ea44f 0%, #3fb950 100%) !important;
         box-shadow: 0 6px 16px rgba(63, 185, 80, 0.5) !important;
         transform: translateY(-1px) !important;
         border-color: rgba(63, 185, 80, 0.6) !important;
+        color: #ffffff !important;
     }
 
     /* ── Streamlit Tabs Overrides ── */
@@ -843,19 +861,7 @@ elif menu == "📝 Diff Viewer":
                 
                 /* Legends box container styling */
                 table[summary="Legends"] {
-                    background: rgba(22, 27, 34, 0.8) !important;
-                    backdrop-filter: blur(12px) !important;
-                    -webkit-backdrop-filter: blur(12px) !important;
-                    border: 1px solid rgba(48, 54, 61, 0.7) !important;
-                    border-radius: 12px !important;
-                    margin: 32px auto 16px auto !important;
-                    max-width: 900px !important;
-                    width: 100% !important;
-                    color: #e6edf3 !important;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-                    border-collapse: separate !important;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-                    overflow: hidden !important;
+                    display: none !important;
                 }
                 table[summary="Legends"] th {
                     background: linear-gradient(90deg, #161b22, #21262d) !important;
