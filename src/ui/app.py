@@ -10,6 +10,9 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 import sqlite3
 import json
@@ -495,6 +498,16 @@ else:
                 "unsupported_apis": ["HttpContext.Current", "System.Web.UI.Page", "System.ServiceModel.*", "ConfigurationManager", "ViewState", "HttpApplication"],
                 "config_complexity_details": {"config_files_count": 2, "has_system_web_config": True, "has_wcf_config": True},
             },
+            "project_analysis": {
+                "dependencies": {
+                    "AssemblyReference:System.Web.Extensions": "Local/GAC",
+                    "AssemblyReference:System.Drawing": "Local/GAC",
+                    "AssemblyReference:Microsoft.Office.Interop.Excel": "Local/GAC",
+                    "AssemblyReference:MyCompany.LegacyCore": "Local/GAC",
+                    "EntityFramework": "6.2.0",
+                    "log4net": "2.0.8"
+                }
+            },
             "ai_suggestions": {
                 "Services/OrderService.svc.cs": {
                     "file_path": "Services/OrderService.svc.cs",
@@ -737,6 +750,35 @@ elif menu == "🛡️ Risk Analysis":
                 """, unsafe_allow_html=True)
     else:
         st.success("No unsupported APIs detected.")
+
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 📦 Hidden Assembly & GAC Dependencies")
+    
+    project_analysis = report_data.get("project_analysis", {})
+    dependencies = project_analysis.get("dependencies", {})
+    
+    # Filter dependencies that are direct GAC/AssemblyReference type
+    hidden_deps = {dep.split(":", 1)[1]: ver for dep, ver in dependencies.items() if dep.startswith("AssemblyReference:")}
+    
+    if hidden_deps:
+        st.markdown("""
+        The following assembly references were detected in the project configuration files (e.g. `.csproj` or `packages.config`) 
+        that represent local libraries or GAC dependencies. These are often **hidden dependencies** during migration because 
+        they may not be natively compatible with .NET 8 or cross-platform environments (like Linux).
+        """)
+        
+        dep_cols = st.columns(2)
+        for idx, (dep, ver) in enumerate(hidden_deps.items()):
+            with dep_cols[idx % 2]:
+                st.markdown(f"""
+                <div class="finding-card" style="--accent: #db6d28; padding: 14px 18px;">
+                    <h5 style="margin: 0; color: #db6d28; font-size: 14px;">📦 {dep}</h5>
+                    <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;"><strong>Source:</strong> Local Assembly / GAC Reference ({ver})</p>
+                    <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;"><strong>Recommendation:</strong> Check compatibility or replace with a modern .NET Standard/8 NuGet package.</p>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.success("No hidden assembly or GAC dependencies detected.")
 
 
 elif menu == "🤖 AI Suggestions":

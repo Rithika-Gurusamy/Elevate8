@@ -55,7 +55,11 @@ class ReportGenerator:
                 "total_files": len(analysis.files)
             },
             "risk_report": risk_report.to_dict(),
-            "ai_suggestions": suggestions.to_dict()
+            "ai_suggestions": suggestions.to_dict(),
+            "project_analysis": {
+                "dependencies": analysis.dependencies,
+                "detected_patterns": analysis.detected_patterns
+            }
         }
         return report_dict
 
