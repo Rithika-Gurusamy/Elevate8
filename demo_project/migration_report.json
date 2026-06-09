@@ -1,0 +1,210 @@
+{
+  "metadata": {
+    "project_path": "C:\\Users\\grith\\Desktop\\Infinite\\demo_project",
+    "generated_at": "2026-06-09T05:02:58Z",
+    "estimated_effort": "2-4 Weeks (High Effort)",
+    "readiness_percentage": 29,
+    "total_files": 10
+  },
+  "risk_report": {
+    "risk_score": 71,
+    "risk_category": "High",
+    "findings": [
+      {
+        "indicator": "WCF",
+        "impact": "High",
+        "count": 4,
+        "files": [
+          "Web.config",
+          "Services\\OrderService.svc",
+          "Services\\OrderService.svc.cs"
+        ],
+        "remediation": "WCF is not natively supported in .NET 8. Migrate services to gRPC, CoreWCF, or ASP.NET Core Minimal APIs."
+      },
+      {
+        "indicator": "WebForms",
+        "impact": "Critical",
+        "count": 5,
+        "files": [
+          "Default.aspx",
+          "Default.aspx.cs",
+          "Global.asax"
+        ],
+        "remediation": "ASP.NET WebForms is not supported in .NET 8. Rewrite interface components using ASP.NET Core Razor Pages, Blazor, or a modern SPA framework (React/Vue) with Web API."
+      },
+      {
+        "indicator": "System.Web",
+        "impact": "Medium",
+        "count": 6,
+        "files": [
+          "Default.aspx.cs",
+          "Global.asax.cs",
+          "Controllers\\HomeController.cs"
+        ],
+        "remediation": "System.Web is deprecated. Replace HttpContext.Current usage with dependency injection of IHttpContextAccessor. Migrate handlers/modules to ASP.NET Core Middleware."
+      },
+      {
+        "indicator": "Legacy Packages",
+        "impact": "Medium",
+        "count": 9,
+        "files": [
+          "LegacyApp.csproj",
+          "packages.config"
+        ],
+        "remediation": "Upgrade legacy NuGet packages to modern versions targeting .NET 8. Legacy packages found: EntityFramework, log4net, Microsoft.AspNet.Mvc, Microsoft.AspNet.Razor, Microsoft.AspNet.WebApi, Microsoft.AspNet.WebPages, Microsoft.AspNet.Web.Optimization, AutoFac.Mvc5, AjaxControlToolkit"
+      },
+      {
+        "indicator": "Config Complexity",
+        "impact": "Low",
+        "count": 2,
+        "files": [
+          "packages.config",
+          "Web.config"
+        ],
+        "remediation": "Convert XML configurations (Web.config/App.config) to JSON-based appsettings.json. Migrate WCF endpoint configurations to code-based initialization."
+      }
+    ],
+    "legacy_packages": [
+      "EntityFramework",
+      "log4net",
+      "Microsoft.AspNet.Mvc",
+      "Microsoft.AspNet.Razor",
+      "Microsoft.AspNet.WebApi",
+      "Microsoft.AspNet.WebPages",
+      "Microsoft.AspNet.Web.Optimization",
+      "AutoFac.Mvc5",
+      "AjaxControlToolkit"
+    ],
+    "unsupported_apis": [
+      "HttpContext.Current",
+      "System.Web.* namespaces",
+      "System.ServiceModel.* namespaces"
+    ],
+    "config_complexity_details": {
+      "config_files_count": 2,
+      "has_system_web_config": true,
+      "has_wcf_config": true,
+      "config_points": 12
+    }
+  },
+  "ai_suggestions": {
+    "Default.aspx.cs": {
+      "file_path": "Default.aspx.cs",
+      "summary": "WebForms code-behind 'Default.aspx.cs' with Page_Load lifecycle, ViewState usage, Session state, HttpContext.Current access, and direct ADO.NET database operations.",
+      "migration_strategy": "1. Convert Page class to a Blazor component @code block.\n2. Replace Page_Load with OnInitializedAsync().\n3. Replace ViewState with component-level fields/properties.\n4. Replace Session access with IDistributedCache or cascading parameters.\n5. Replace HttpContext.Current with injected IHttpContextAccessor.\n6. Replace SqlConnection/SqlCommand with EF Core DbContext.",
+      "unsupported_apis": [
+        "System.Web.UI.Page",
+        "Page_Load",
+        "ViewState",
+        "HttpContext.Current",
+        "Session[]",
+        "Response.Redirect",
+        "ConfigurationManager.ConnectionStrings"
+      ],
+      "dotnet8_equivalent": "@page \"/\"\n@using Microsoft.AspNetCore.Http\n@using Microsoft.EntityFrameworkCore\n@inject AppDbContext Db\n@inject IHttpContextAccessor HttpContextAccessor\n@inject NavigationManager NavigationManager\n\n<PageTitle>Dashboard</PageTitle>\n\n@code {\n    private List<OrderDto> orders = new();\n    private string currentUser = \"\";\n    private int totalOrders;\n    private decimal totalRevenue;\n\n    protected override async Task OnInitializedAsync()\n    {\n        // Replaces HttpContext.Current.User\n        currentUser = HttpContextAccessor.HttpContext?.User?.Identity?.Name ?? \"Anonymous\";\n\n        // Replaces ViewState + Page_Load data binding\n        orders = await Db.Orders\n            .Include(o => o.Customer)\n            .OrderByDescending(o => o.OrderDate)\n            .Take(100)\n            .Select(o => new OrderDto(o.OrderId, o.Customer.CustomerName, o.OrderDate, o.TotalAmount, o.Status))\n            .ToListAsync();\n\n        var summary = await Db.Orders\n            .Where(o => o.OrderDate.Year == DateTime.Now.Year)\n            .GroupBy(_ => 1)\n            .Select(g => new { Count = g.Count(), Revenue = g.Sum(o => o.TotalAmount) })\n            .FirstOrDefaultAsync();\n\n        totalOrders = summary?.Count ?? 0;\n        totalRevenue = summary?.Revenue ?? 0;\n    }\n}",
+      "code_diff_markdown": "- public partial class Default : System.Web.UI.Page\n- {\n-     protected void Page_Load(object sender, EventArgs e) { ... }\n-     ViewState[\"CurrentUser\"] = HttpContext.Current.User.Identity.Name;\n- }\n+ @page \"/\"\n+ @inject IHttpContextAccessor HttpContextAccessor\n+ @inject AppDbContext Db\n+ @code {\n+     private List<OrderDto> orders = new();\n+     protected override async Task OnInitializedAsync()\n+     {\n+         orders = await Db.Orders.Include(o => o.Customer).ToListAsync();\n+     }\n+ }",
+      "confidence_score": 0.74
+    },
+    "Global.asax.cs": {
+      "file_path": "Global.asax.cs",
+      "summary": "ASP.NET Global Application file 'Global.asax.cs' implementing HttpApplication lifecycle events (Application_Start, Application_BeginRequest, Application_Error, Session_Start).",
+      "migration_strategy": "1. Move Application_Start logic to Program.cs builder configuration.\n2. Replace Application_BeginRequest/EndRequest with ASP.NET Core middleware.\n3. Replace Application_Error with app.UseExceptionHandler() middleware.\n4. Replace Session_Start with session configuration in Program.cs.\n5. Replace Application/Session state with DI-registered singleton/scoped services.",
+      "unsupported_apis": [
+        "System.Web.HttpApplication",
+        "Application_Start",
+        "Application_BeginRequest",
+        "Application_Error",
+        "Session_Start",
+        "HttpContext.Current"
+      ],
+      "dotnet8_equivalent": "// Program.cs \u2014 replaces Global.asax.cs entirely\n\nusing LegacyApp.Middleware;\n\nvar builder = WebApplication.CreateBuilder(args);\n\n// Service registration (replaces Application_Start)\nbuilder.Services.AddControllersWithViews();\nbuilder.Services.AddDbContext<AppDbContext>(o =>\n    o.UseSqlServer(builder.Configuration.GetConnectionString(\"DefaultConnection\")));\nbuilder.Services.AddMemoryCache();\nbuilder.Services.AddSession(o => o.IdleTimeout = TimeSpan.FromMinutes(20));\nbuilder.Services.AddSingleton<IAppMetrics, AppMetrics>();\n\nvar app = builder.Build();\n\n// Middleware pipeline (replaces Application_BeginRequest/EndRequest)\napp.UseMiddleware<RequestTimingMiddleware>();\napp.UseExceptionHandler(\"/Error\");\napp.UseHsts();\napp.UseHttpsRedirection();\napp.UseStaticFiles();\napp.UseRouting();\napp.UseAuthentication();\napp.UseAuthorization();\napp.UseSession();\napp.MapControllerRoute(\"default\", \"{controller=Home}/{action=Index}/{id?}\");\n\napp.Run();\n\n// RequestTimingMiddleware.cs \u2014 replaces Application_BeginRequest/EndRequest\nnamespace LegacyApp.Middleware;\n\n/// <summary>Middleware that logs slow requests (replaces HttpApplication events).</summary>\npublic class RequestTimingMiddleware\n{\n    private readonly RequestDelegate _next;\n    private readonly ILogger<RequestTimingMiddleware> _logger;\n\n    public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger)\n    {\n        _next = next;\n        _logger = logger;\n    }\n\n    public async Task InvokeAsync(HttpContext context, IAppMetrics metrics)\n    {\n        var stopwatch = System.Diagnostics.Stopwatch.StartNew();\n        metrics.IncrementRequestCount();\n\n        await _next(context);\n\n        stopwatch.Stop();\n        if (stopwatch.ElapsedMilliseconds > 500)\n        {\n            _logger.LogWarning(\"[SLOW REQUEST] {Path} took {Elapsed}ms\",\n                context.Request.Path, stopwatch.ElapsedMilliseconds);\n        }\n    }\n}",
+      "code_diff_markdown": "- public class MvcApplication : System.Web.HttpApplication\n- {\n-     protected void Application_Start() { ... }\n-     protected void Application_BeginRequest() { ... }\n- }\n+ var builder = WebApplication.CreateBuilder(args);\n+ builder.Services.AddControllersWithViews();\n+ var app = builder.Build();\n+ app.UseMiddleware<RequestTimingMiddleware>();\n+ app.UseExceptionHandler(\"/Error\");\n+ app.Run();",
+      "confidence_score": 0.9
+    },
+    "Global.asax": {
+      "file_path": "Global.asax",
+      "summary": "Legacy .NET component 'Global.asax' requiring upgrade to .NET 8.",
+      "migration_strategy": "1. Update target framework to net8.0 in .csproj.\n2. Replace legacy assembly references with modern NuGet packages.\n3. Update namespace imports for .NET 8 compatibility.",
+      "unsupported_apis": [
+        "WebForms: ASP.NET WebForms is not supported in .NET 8. Rewrite interface components using ASP.NET Core Razor Pages, Blazor, or a modern SPA framework (React/Vue) with Web API."
+      ],
+      "dotnet8_equivalent": "<Project Sdk=\"Microsoft.NET.Sdk.Web\">\n  <PropertyGroup>\n    <TargetFramework>net8.0</TargetFramework>\n  </PropertyGroup>\n</Project>",
+      "code_diff_markdown": "- <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>\n+ <TargetFramework>net8.0</TargetFramework>",
+      "confidence_score": 0.8
+    },
+    "Default.aspx": {
+      "file_path": "Default.aspx",
+      "summary": "WebForms page 'Default.aspx' using server controls (GridView, UpdatePanel, ScriptManager), ViewState for state management, and ASPX markup with code-behind pattern.",
+      "migration_strategy": "1. Replace .aspx markup with a Blazor component (.razor) or Razor Page.\n2. Replace <asp:GridView> with a Blazor table component or MudBlazor DataGrid.\n3. Replace <asp:UpdatePanel> with Blazor's built-in re-rendering.\n4. Remove ViewState \u2014 use Blazor component state (@code { }) instead.\n5. Replace code-behind event handlers (Page_Load, Button_Click) with Blazor lifecycle methods.",
+      "unsupported_apis": [
+        "System.Web.UI.Page",
+        "asp:GridView",
+        "asp:UpdatePanel",
+        "asp:ScriptManager",
+        "ViewState",
+        "runat=\"server\""
+      ],
+      "dotnet8_equivalent": "@page \"/\"\n@using LegacyApp.Data\n@inject IOrderService OrderService\n@inject IHttpContextAccessor HttpContextAccessor\n\n<PageTitle>Enterprise Dashboard</PageTitle>\n\n<div class=\"container\">\n    <h1>Enterprise Dashboard</h1>\n\n    <MudTable Items=\"@orders\" Hover=\"true\" Striped=\"true\" Loading=\"@isLoading\"\n              Pagination=\"new MudTablePager { PageSizeOptions = new[] { 10, 25, 50 } }\">\n        <HeaderContent>\n            <MudTh>Order #</MudTh>\n            <MudTh>Customer</MudTh>\n            <MudTh>Date</MudTh>\n            <MudTh>Total</MudTh>\n            <MudTh>Status</MudTh>\n            <MudTh>Actions</MudTh>\n        </HeaderContent>\n        <RowTemplate>\n            <MudTd>@context.OrderId</MudTd>\n            <MudTd>@context.CustomerName</MudTd>\n            <MudTd>@context.OrderDate.ToString(\"MM/dd/yyyy\")</MudTd>\n            <MudTd>@context.TotalAmount.ToString(\"C\")</MudTd>\n            <MudTd><MudChip Color=\"@GetStatusColor(context.Status)\">@context.Status</MudChip></MudTd>\n            <MudTd><MudButton Variant=\"Variant.Text\" OnClick=\"() => ViewOrder(context.OrderId)\">View</MudButton></MudTd>\n        </RowTemplate>\n    </MudTable>\n\n    <div class=\"mt-4\">\n        <MudText Typo=\"Typo.body1\">Total Orders: @totalOrders</MudText>\n        <MudText Typo=\"Typo.body1\">Revenue: @totalRevenue.ToString(\"C\")</MudText>\n    </div>\n\n    <MudButton Variant=\"Variant.Filled\" Color=\"Color.Primary\" OnClick=\"RefreshData\">Refresh</MudButton>\n</div>\n\n@code {\n    private List<OrderDto> orders = new();\n    private bool isLoading = true;\n    private int totalOrders;\n    private decimal totalRevenue;\n\n    protected override async Task OnInitializedAsync()\n    {\n        await RefreshData();\n    }\n\n    private async Task RefreshData()\n    {\n        isLoading = true;\n        orders = await OrderService.GetAllOrdersAsync();\n        totalOrders = orders.Count;\n        totalRevenue = orders.Where(o => o.Status == \"Completed\").Sum(o => o.TotalAmount);\n        isLoading = false;\n    }\n\n    private void ViewOrder(int orderId)\n    {\n        NavigationManager.NavigateTo($\"/orders/{orderId}\");\n    }\n\n    private Color GetStatusColor(string status) => status switch\n    {\n        \"Completed\" => Color.Success,\n        \"Pending\" => Color.Warning,\n        \"Cancelled\" => Color.Error,\n        _ => Color.Default\n    };\n}",
+      "code_diff_markdown": "- <%@ Page Language=\"C#\" Inherits=\"LegacyApp.Default\" %>\n- <asp:GridView ID=\"OrdersGrid\" runat=\"server\" ... />\n- <asp:UpdatePanel ID=\"UpdatePanel1\" runat=\"server\">\n+ @page \"/\"\n+ @inject IOrderService OrderService\n+ <MudTable Items=\"@orders\" Hover=\"true\" Striped=\"true\">\n+     <HeaderContent>...</HeaderContent>\n+     <RowTemplate>...</RowTemplate>\n+ </MudTable>",
+      "confidence_score": 0.72
+    },
+    "Web.config": {
+      "file_path": "Web.config",
+      "summary": "XML configuration file 'Web.config' containing connection strings, system.web settings, system.serviceModel WCF bindings, Entity Framework configuration, and custom HTTP modules.",
+      "migration_strategy": "1. Move <connectionStrings> to appsettings.json under \"ConnectionStrings\" key.\n2. Move <appSettings> to appsettings.json.\n3. Replace <system.web> authentication/authorization with ASP.NET Core Identity middleware.\n4. Replace <system.serviceModel> WCF config with code-based endpoint registration.\n5. Replace <entityFramework> config with EF Core registration in Program.cs.\n6. Replace <httpModules> with ASP.NET Core middleware in Program.cs.",
+      "unsupported_apis": [
+        "<system.web>",
+        "<system.serviceModel>",
+        "<httpModules>",
+        "ConfigurationManager",
+        "Forms authentication mode"
+      ],
+      "dotnet8_equivalent": "{\n  \"ConnectionStrings\": {\n    \"DefaultConnection\": \"Server=.\\\\SQLEXPRESS;Database=LegacyAppDB;Trusted_Connection=true;TrustServerCertificate=true\",\n    \"ReportingDB\": \"Server=.\\\\SQLEXPRESS;Database=ReportingDB;Trusted_Connection=true;TrustServerCertificate=true\"\n  },\n  \"AppSettings\": {\n    \"MaxPageSize\": 100,\n    \"EnableAuditLog\": true,\n    \"SmtpServer\": \"smtp.company.internal\"\n  },\n  \"Logging\": {\n    \"LogLevel\": {\n      \"Default\": \"Information\",\n      \"Microsoft.AspNetCore\": \"Warning\"\n    }\n  }\n}\n\n// Program.cs \u2014 replaces Web.config system sections:\n// var builder = WebApplication.CreateBuilder(args);\n//\n// // Replaces <system.web><authentication mode=\"Forms\">\n// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)\n//     .AddCookie(options => { options.LoginPath = \"/login\"; options.ExpireTimeSpan = TimeSpan.FromDays(2); });\n//\n// // Replaces <system.web><sessionState>\n// builder.Services.AddDistributedMemoryCache();\n// builder.Services.AddSession(options => { options.IdleTimeout = TimeSpan.FromMinutes(20); });\n//\n// // Replaces <entityFramework>\n// builder.Services.AddDbContext<AppDbContext>(o =>\n//     o.UseSqlServer(builder.Configuration.GetConnectionString(\"DefaultConnection\")));\n//\n// // Replaces <httpModules><add name=\"AuditModule\">\n// app.UseMiddleware<AuditMiddleware>();",
+      "code_diff_markdown": "- <connectionStrings>\n-   <add name=\"DefaultConnection\" connectionString=\"...\" />\n- </connectionStrings>\n- <system.web>\n-   <authentication mode=\"Forms\" />\n- </system.web>\n+ // appsettings.json:\n+ \"ConnectionStrings\": { \"DefaultConnection\": \"...\" },\n+ // Program.cs:\n+ builder.Services.AddAuthentication().AddCookie();",
+      "confidence_score": 0.88
+    },
+    "Controllers\\HomeController.cs": {
+      "file_path": "Controllers\\HomeController.cs",
+      "summary": "Legacy ASP.NET MVC controller or HTTP module 'HomeController.cs' using HttpContext.Current, Session, Application state, Cache API, and ConfigurationManager.",
+      "migration_strategy": "1. Replace HttpContext.Current with constructor-injected IHttpContextAccessor.\n2. Replace System.Web.Mvc.Controller with Microsoft.AspNetCore.Mvc.Controller.\n3. Replace ConfigurationManager with IConfiguration.\n4. Replace ASP.NET Cache with IMemoryCache or IDistributedCache.\n5. Replace Session direct access with HttpContext.Session extension methods.\n6. Replace Application state with a singleton service registered in DI.",
+      "unsupported_apis": [
+        "HttpContext.Current",
+        "System.Web.Mvc.Controller",
+        "HttpContext.Current.Cache",
+        "HttpContext.Current.Application",
+        "HttpContext.Current.Server.MapPath",
+        "ConfigurationManager"
+      ],
+      "dotnet8_equivalent": "using Microsoft.AspNetCore.Mvc;\nusing Microsoft.AspNetCore.Http;\nusing Microsoft.Extensions.Caching.Memory;\nusing Microsoft.Extensions.Configuration;\nusing Microsoft.EntityFrameworkCore;\n\nnamespace LegacyApp.Controllers;\n\n/// <summary>Home controller migrated to ASP.NET Core with dependency injection.</summary>\npublic class HomeController : Controller\n{\n    private readonly IHttpContextAccessor _httpContextAccessor;\n    private readonly IMemoryCache _cache;\n    private readonly IConfiguration _configuration;\n    private readonly AppDbContext _db;\n\n    public HomeController(\n        IHttpContextAccessor httpContextAccessor,\n        IMemoryCache cache,\n        IConfiguration configuration,\n        AppDbContext db)\n    {\n        _httpContextAccessor = httpContextAccessor;\n        _cache = cache;\n        _configuration = configuration;\n        _db = db;\n    }\n\n    public async Task<IActionResult> Index()\n    {\n        // Replaces HttpContext.Current.User.Identity.Name\n        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? \"Anonymous\";\n        ViewBag.UserName = userName;\n        ViewBag.ServerTime = DateTime.UtcNow;\n\n        // Replaces HttpContext.Current.Cache with IMemoryCache\n        if (!_cache.TryGetValue(\"DashboardStats\", out Dictionary<string, object>? stats))\n        {\n            stats = await LoadDashboardStatsAsync();\n            _cache.Set(\"DashboardStats\", stats, TimeSpan.FromMinutes(5));\n        }\n        ViewBag.Stats = stats;\n\n        return View();\n    }\n\n    [HttpPost]\n    [ValidateAntiForgeryToken]\n    public async Task<IActionResult> UpdateProfile(string email, string phone)\n    {\n        var userId = Request.Cookies[\"UserId\"];\n        if (string.IsNullOrEmpty(userId))\n            return Unauthorized(\"Not authenticated\");\n\n        var user = await _db.Users.FindAsync(int.Parse(userId));\n        if (user is null) return NotFound();\n\n        user.Email = email;\n        user.Phone = phone;\n        await _db.SaveChangesAsync();\n\n        Response.Cookies.Append(\"LastUpdate\", DateTime.UtcNow.ToString(), new CookieOptions\n        {\n            Expires = DateTimeOffset.UtcNow.AddDays(30)\n        });\n\n        TempData[\"Message\"] = \"Profile updated successfully.\";\n        return RedirectToAction(\"Index\");\n    }\n\n    private async Task<Dictionary<string, object>> LoadDashboardStatsAsync()\n    {\n        var stats = await _db.Orders\n            .GroupBy(_ => 1)\n            .Select(g => new\n            {\n                TotalOrders = g.Count(),\n                TotalCustomers = g.Select(o => o.CustomerId).Distinct().Count(),\n                Revenue = g.Where(o => o.Status == \"Completed\").Sum(o => o.TotalAmount)\n            })\n            .FirstOrDefaultAsync();\n\n        return new Dictionary<string, object>\n        {\n            [\"TotalOrders\"] = stats?.TotalOrders ?? 0,\n            [\"TotalCustomers\"] = stats?.TotalCustomers ?? 0,\n            [\"Revenue\"] = stats?.Revenue ?? 0m\n        };\n    }\n}",
+      "code_diff_markdown": "- using System.Web;\n- using System.Web.Mvc;\n- var userName = HttpContext.Current.User.Identity.Name;\n- HttpContext.Current.Cache[\"key\"] = value;\n+ using Microsoft.AspNetCore.Mvc;\n+ using Microsoft.Extensions.Caching.Memory;\n+ public HomeController(IHttpContextAccessor ctx, IMemoryCache cache, IConfiguration config)\n+ var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name;",
+      "confidence_score": 0.85
+    },
+    "Services\\OrderService.svc": {
+      "file_path": "Services\\OrderService.svc",
+      "summary": "WCF service host file 'OrderService.svc' that routes SOAP requests to the service implementation. This file defines the ServiceHost directive used by IIS to activate the WCF service.",
+      "migration_strategy": "1. Remove the .svc file entirely \u2014 .NET 8 does not use .svc hosting.\n2. Register the service as a Minimal API endpoint in Program.cs.\n3. If SOAP compatibility is required, use CoreWCF NuGet package.\n4. For new clients, prefer gRPC with Protobuf contracts.",
+      "unsupported_apis": [
+        "System.ServiceModel.Activation.ServiceHostFactory",
+        "<%@ ServiceHost %> directive"
+      ],
+      "dotnet8_equivalent": "// .svc file is eliminated in .NET 8.\n// Service is registered in Program.cs as a Minimal API:\n\n// Program.cs\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Services.AddDbContext<AppDbContext>(o =>\n    o.UseSqlServer(builder.Configuration.GetConnectionString(\"DefaultConnection\")));\n\nvar app = builder.Build();\napp.MapGroup(\"/api/orderservices\").MapOrderServiceEndpoints();\napp.Run();",
+      "code_diff_markdown": "- <%@ ServiceHost Language=\"C#\" Service=\"LegacyApp.Services.OrderService\" %>\n+ // Service registered in Program.cs:\n+ app.MapGroup(\"/api/orders\").MapOrderEndpoints();",
+      "confidence_score": 0.8
+    },
+    "Services\\OrderService.svc.cs": {
+      "file_path": "Services\\OrderService.svc.cs",
+      "summary": "WCF service implementation 'OrderService.svc.cs' with [ServiceContract] and [OperationContract] attributes, using ADO.NET for data access via SqlConnection and ConfigurationManager.",
+      "migration_strategy": "1. Replace [ServiceContract] interface with ASP.NET Core Minimal API endpoint group.\n2. Replace [OperationContract] methods with MapGet/MapPost/MapPut/MapDelete handlers.\n3. Replace [DataContract]/[DataMember] DTOs with C# records.\n4. Replace ConfigurationManager with IConfiguration via dependency injection.\n5. Replace raw SqlConnection/SqlCommand with Entity Framework Core DbContext.\n6. Add proper input validation with FluentValidation or Data Annotations.",
+      "unsupported_apis": [
+        "System.ServiceModel.ServiceContractAttribute",
+        "System.ServiceModel.OperationContractAttribute",
+        "System.ServiceModel.Activation.AspNetCompatibilityRequirementsAttribute",
+        "System.Runtime.Serialization.DataContractAttribute",
+        "System.Configuration.ConfigurationManager"
+      ],
+      "dotnet8_equivalent": "using Microsoft.AspNetCore.Http.HttpResults;\nusing Microsoft.EntityFrameworkCore;\n\nnamespace LegacyApp.Endpoints;\n\n/// <summary>Order data transfer object.</summary>\npublic record OrderDto(int OrderId, string CustomerName, DateTime OrderDate, decimal TotalAmount, string Status);\n\n/// <summary>Request payload for creating a new order.</summary>\npublic record CreateOrderRequest(int CustomerId, List<OrderItemRequest> Items);\npublic record OrderItemRequest(int ProductId, int Quantity, decimal UnitPrice);\n\n/// <summary>Standard API response envelope.</summary>\npublic record ServiceResponse(bool Success, string Message, int? OrderId = null);\n\n/// <summary>Minimal API endpoints replacing the WCF OrderService.</summary>\npublic static class OrderEndpoints\n{\n    public static RouteGroupBuilder MapOrderEndpoints(this RouteGroupBuilder group)\n    {\n        group.MapGet(\"/\", GetAllOrders).WithName(\"GetOrders\").WithOpenApi();\n        group.MapGet(\"/{id:int}\", GetOrderById).WithName(\"GetOrder\").WithOpenApi();\n        group.MapPost(\"/\", CreateOrder).WithName(\"CreateOrder\").WithOpenApi();\n        group.MapPut(\"/{id:int}/status\", UpdateStatus).WithName(\"UpdateOrderStatus\").WithOpenApi();\n        group.MapDelete(\"/{id:int}\", CancelOrder).WithName(\"CancelOrder\").WithOpenApi();\n        return group;\n    }\n\n    private static async Task<Ok<List<OrderDto>>> GetAllOrders(AppDbContext db)\n    {\n        var orders = await db.Orders\n            .Include(o => o.Customer)\n            .OrderByDescending(o => o.OrderDate)\n            .Select(o => new OrderDto(o.OrderId, o.Customer.CustomerName, o.OrderDate, o.TotalAmount, o.Status))\n            .ToListAsync();\n        return TypedResults.Ok(orders);\n    }\n\n    private static async Task<Results<Ok<OrderDto>, NotFound>> GetOrderById(int id, AppDbContext db)\n    {\n        var order = await db.Orders.Include(o => o.Customer)\n            .Where(o => o.OrderId == id)\n            .Select(o => new OrderDto(o.OrderId, o.Customer.CustomerName, o.OrderDate, o.TotalAmount, o.Status))\n            .FirstOrDefaultAsync();\n        return order is not null ? TypedResults.Ok(order) : TypedResults.NotFound();\n    }\n\n    private static async Task<Created<ServiceResponse>> CreateOrder(CreateOrderRequest req, AppDbContext db)\n    {\n        var total = req.Items.Sum(i => i.Quantity * i.UnitPrice);\n        var order = new Order\n        {\n            CustomerId = req.CustomerId,\n            OrderDate = DateTime.UtcNow,\n            TotalAmount = total,\n            Status = \"Pending\",\n            Items = req.Items.Select(i => new OrderItem\n            {\n                ProductId = i.ProductId,\n                Quantity = i.Quantity,\n                UnitPrice = i.UnitPrice\n            }).ToList()\n        };\n\n        db.Orders.Add(order);\n        await db.SaveChangesAsync();\n\n        return TypedResults.Created($\"/api/orders/{order.OrderId}\",\n            new ServiceResponse(true, \"Order created.\", order.OrderId));\n    }\n\n    private static async Task<Results<Ok<ServiceResponse>, NotFound>> UpdateStatus(\n        int id, string newStatus, AppDbContext db)\n    {\n        var order = await db.Orders.FindAsync(id);\n        if (order is null) return TypedResults.NotFound();\n        order.Status = newStatus;\n        await db.SaveChangesAsync();\n        return TypedResults.Ok(new ServiceResponse(true, \"Status updated.\"));\n    }\n\n    private static async Task<Results<Ok<ServiceResponse>, NotFound>> CancelOrder(int id, AppDbContext db)\n    {\n        var order = await db.Orders.FindAsync(id);\n        if (order is null) return TypedResults.NotFound();\n        order.Status = \"Cancelled\";\n        await db.SaveChangesAsync();\n        return TypedResults.Ok(new ServiceResponse(true, \"Order cancelled.\"));\n    }\n}",
+      "code_diff_markdown": "- [ServiceContract]\n- public interface IOrderService { ... }\n- [AspNetCompatibilityRequirements(...)]\n- public class OrderService : IOrderService { ... }\n+ public static class OrderEndpoints\n+ {\n+     public static RouteGroupBuilder MapOrderEndpoints(this RouteGroupBuilder group)\n+     {\n+         group.MapGet(\"/\", async (AppDbContext db) => await db.Orders.ToListAsync());\n+         group.MapGet(\"/{id}\", async (int id, AppDbContext db) => ...);\n+         group.MapPost(\"/\", async (CreateOrderRequest req, AppDbContext db) => ...);\n+         return group;\n+     }\n+ }",
+      "confidence_score": 0.78
+    }
+  }
+}

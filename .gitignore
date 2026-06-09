@@ -1,0 +1,27 @@
+# Environments
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases
+*.db
+*.sqlite3
+
+# Backups and logs
+backups/
+*.log
+
+# IDEs
+.vscode/
+.idea/

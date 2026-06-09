@@ -1,0 +1,71 @@
+@page "/"
+@using LegacyApp.Data
+@inject IOrderService OrderService
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Enterprise Dashboard</PageTitle>
+
+<div class="container">
+    <h1>Enterprise Dashboard</h1>
+
+    <MudTable Items="@orders" Hover="true" Striped="true" Loading="@isLoading"
+              Pagination="new MudTablePager { PageSizeOptions = new[] { 10, 25, 50 } }">
+        <HeaderContent>
+            <MudTh>Order #</MudTh>
+            <MudTh>Customer</MudTh>
+            <MudTh>Date</MudTh>
+            <MudTh>Total</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.OrderId</MudTd>
+            <MudTd>@context.CustomerName</MudTd>
+            <MudTd>@context.OrderDate.ToString("MM/dd/yyyy")</MudTd>
+            <MudTd>@context.TotalAmount.ToString("C")</MudTd>
+            <MudTd><MudChip Color="@GetStatusColor(context.Status)">@context.Status</MudChip></MudTd>
+            <MudTd><MudButton Variant="Variant.Text" OnClick="() => ViewOrder(context.OrderId)">View</MudButton></MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <div class="mt-4">
+        <MudText Typo="Typo.body1">Total Orders: @totalOrders</MudText>
+        <MudText Typo="Typo.body1">Revenue: @totalRevenue.ToString("C")</MudText>
+    </div>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RefreshData">Refresh</MudButton>
+</div>
+
+@code {
+    private List<OrderDto> orders = new();
+    private bool isLoading = true;
+    private int totalOrders;
+    private decimal totalRevenue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+    }
+
+    private async Task RefreshData()
+    {
+        isLoading = true;
+        orders = await OrderService.GetAllOrdersAsync();
+        totalOrders = orders.Count;
+        totalRevenue = orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount);
+        isLoading = false;
+    }
+
+    private void ViewOrder(int orderId)
+    {
+        NavigationManager.NavigateTo($"/orders/{orderId}");
+    }
+
+    private Color GetStatusColor(string status) => status switch
+    {
+        "Completed" => Color.Success,
+        "Pending" => Color.Warning,
+        "Cancelled" => Color.Error,
+        _ => Color.Default
+    };
+}
