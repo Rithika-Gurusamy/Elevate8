@@ -72,7 +72,7 @@ def test_cli_analyze_flow(
         "analyze",
         str(proj_dir),
         "--db", str(db_file)
-    ], input="y\ny\n")
+    ], input="\ny\ny\n")
     
     # Assertions
     if result.exit_code != 0:
