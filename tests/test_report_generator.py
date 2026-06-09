@@ -98,3 +98,45 @@ def test_pdf_export(tmp_path):
     assert os.path.exists(pdf_out_path)
     # Check that PDF has non-zero size
     assert os.path.getsize(pdf_out_path) > 0
+
+
+def test_hidden_dependencies_in_report():
+    from src.scanner.models import ProjectAnalysis, AnalyzedFile
+    from src.risk_engine.models import MigrationRiskReport
+    from src.ai_engine.models import ProjectMigrationSuggestion
+    from src.reporting.generator import ReportGenerator
+
+    project_path = "C:/DemoApp"
+    
+    # Setup mock analysis with direct assembly references (hidden dependencies)
+    analysis = ProjectAnalysis(
+        files=[
+            AnalyzedFile(file_path="LegacyApp.csproj", extension=".csproj", lines_of_code=10)
+        ],
+        dependencies={
+            "AssemblyReference:System.Web.Extensions": "Local/GAC",
+            "AssemblyReference:MyCompany.InternalHelper": "Local/GAC",
+            "EntityFramework": "6.2.0"
+        }
+    )
+    
+    risk_report = MigrationRiskReport(
+        risk_score=20,
+        risk_category="Low",
+        findings=[],
+        legacy_packages=[],
+        unsupported_apis=[]
+    )
+    
+    suggestions = ProjectMigrationSuggestion(suggestions={})
+    
+    generator = ReportGenerator()
+    report_dict = generator.generate_json_report(project_path, risk_report, suggestions, analysis)
+    
+    # Assert project_analysis key is present
+    assert "project_analysis" in report_dict
+    # Assert dependencies are successfully populated
+    deps = report_dict["project_analysis"]["dependencies"]
+    assert "AssemblyReference:System.Web.Extensions" in deps
+    assert "AssemblyReference:MyCompany.InternalHelper" in deps
+    assert deps["AssemblyReference:System.Web.Extensions"] == "Local/GAC"
