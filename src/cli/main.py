@@ -308,9 +308,19 @@ def analyze(
         for fp, sug in suggestions.suggestions.items():
             conf = sug.confidence_score
             conf_color = "green" if conf >= 0.8 else ("yellow" if conf >= 0.5 else "red")
+            
+            # Safe normalization in case of anomalous strategy types
+            strategy_str = sug.migration_strategy
+            if isinstance(strategy_str, list):
+                strategy_str = "\n".join(str(s) for s in strategy_str)
+            elif strategy_str is None:
+                strategy_str = ""
+            else:
+                strategy_str = str(strategy_str)
+
             ai_table.add_row(
                 fp,
-                sug.migration_strategy[:60] + ("…" if len(sug.migration_strategy) > 60 else ""),
+                strategy_str[:60] + ("…" if len(strategy_str) > 60 else ""),
                 f"[{conf_color}]{conf*100:.0f}%[/{conf_color}]",
             )
         console.print(ai_table)
@@ -347,19 +357,37 @@ def analyze(
     console.print(Panel(
         "[bold]Launching the interactive Streamlit dashboard…[/bold]\n"
         "The dashboard will open in your default web browser.\n\n"
-        "[yellow]Press [bold]Ctrl+C[/bold] or close the browser tab to return to the CLI.[/yellow]",
+        "[yellow]Once you are done reviewing, press [bold]Enter[/bold] in the terminal to proceed to backups and migrations.[/yellow]",
         title="[bold blue]⚡ Streamlit Dashboard[/bold blue]",
         border_style="blue",
         padding=(1, 2),
     ))
     db.log_message("INFO", "Launching Streamlit UI app from CLI.")
 
+    process = None
     try:
-        subprocess.run(["streamlit", "run", "src/ui/app.py", "--server.headless=true"], check=False)
-    except KeyboardInterrupt:
-        console.print("\n[yellow]Returned to Migration CLI.[/yellow]")
+        process = subprocess.Popen(
+            [sys.executable, "-m", "streamlit", "run", "src/ui/app.py", "--server.headless=true"]
+        )
+        # Give Streamlit a brief moment to spin up, bind the port and print URLs
+        time.sleep(2.0)
     except Exception as e:
         console.print(f"[red]Could not start Streamlit: {str(e)}[/red]")
+
+    try:
+        console.input("\n👉 Press [bold green]Enter[/bold green] to take backup or save changes...")
+    except (KeyboardInterrupt, EOFError):
+        console.print("\n[yellow]Proceeding to backup and save changes...[/yellow]")
+
+    if process:
+        try:
+            process.terminate()
+            process.wait(timeout=3)
+        except Exception:
+            try:
+                process.kill()
+            except Exception:
+                pass
 
     # ══════════════════════════════════════════════════════════════
     # PHASE 6: Backup & Migration

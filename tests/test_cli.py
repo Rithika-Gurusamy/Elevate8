@@ -69,9 +69,10 @@ def test_cli_analyze_flow(
     db_file = tmp_path / "cli_test.db"
     
     result = runner.invoke(app, [
+        "analyze",
         str(proj_dir),
         "--db", str(db_file)
-    ], input="y\ny\n")
+    ], input="\ny\ny\n")
     
     # Assertions
     if result.exit_code != 0:

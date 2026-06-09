@@ -14,6 +14,13 @@ public class HomeController : Controller
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _db;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HomeController"/> class.
+    /// </summary>
+    /// <param name="httpContextAccessor">The accessor for the current HTTP context.</param>
+    /// <param name="cache">The in-memory cache service.</param>
+    /// <param name="configuration">The application configuration service.</param>
+    /// <param name="db">The application database context.</param>
     public HomeController(
         IHttpContextAccessor httpContextAccessor,
         IMemoryCache cache,
@@ -26,6 +33,10 @@ public class HomeController : Controller
         _db = db;
     }
 
+    /// <summary>
+    /// Displays the application's home page with dashboard statistics.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> representing the view.</returns>
     public async Task<IActionResult> Index()
     {
         // Replaces HttpContext.Current.User.Identity.Name
@@ -44,6 +55,12 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>
+    /// Handles profile update requests, persisting changes to the database.
+    /// </summary>
+    /// <param name="email">The new email address for the user.</param>
+    /// <param name="phone">The new phone number for the user.</param>
+    /// <returns>An <see cref="IActionResult"/> redirecting to the Index page upon success, or an error response.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateProfile(string email, string phone)
@@ -68,6 +85,10 @@ public class HomeController : Controller
         return RedirectToAction("Index");
     }
 
+    /// <summary>
+    /// Asynchronously loads dashboard statistics from the database.
+    /// </summary>
+    /// <returns>A dictionary containing dashboard statistics.</returns>
     private async Task<Dictionary<string, object>> LoadDashboardStatsAsync()
     {
         var stats = await _db.Orders

@@ -40,7 +40,7 @@ class GeminiClient:
             self.api_key = os.environ.get("GEMINI_API_KEY")
         else:
             self.api_key = api_key
-        self.model_name = "gemini-2.0-flash"
+        self.model_name = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
         if self.api_key and genai:
             genai.configure(api_key=self.api_key)
@@ -51,6 +51,47 @@ class GeminiClient:
                 "WARNING",
                 "GEMINI_API_KEY not set or google-generativeai not installed. Running in offline/mock mode."
             )
+
+    def _create_suggestion(self, file_path: str, parsed_json: Dict[str, Any]) -> FileMigrationSuggestion:
+        """Create FileMigrationSuggestion from parsed JSON with type normalization."""
+        # Normalize migration_strategy to string
+        strategy = parsed_json.get("migration_strategy")
+        if isinstance(strategy, list):
+            strategy_str = "\n".join(str(s) for s in strategy)
+        elif strategy is not None:
+            strategy_str = str(strategy)
+        else:
+            strategy_str = ""
+
+        # Normalize summary to string
+        summary = parsed_json.get("summary", "")
+        summary_str = str(summary) if summary is not None else ""
+
+        # Normalize unsupported_apis to list
+        unsupported = parsed_json.get("unsupported_apis")
+        if isinstance(unsupported, str):
+            unsupported_list = [unsupported]
+        elif isinstance(unsupported, list):
+            unsupported_list = [str(x) for x in unsupported]
+        else:
+            unsupported_list = []
+
+        # Normalize confidence_score to float
+        conf = parsed_json.get("confidence_score")
+        try:
+            confidence = float(conf) if conf is not None else 0.0
+        except (ValueError, TypeError):
+            confidence = 0.0
+
+        return FileMigrationSuggestion(
+            file_path=file_path,
+            summary=summary_str,
+            migration_strategy=strategy_str,
+            unsupported_apis=unsupported_list,
+            dotnet8_equivalent=str(parsed_json.get("dotnet8_equivalent", "")),
+            code_diff_markdown=str(parsed_json.get("code_diff_markdown", "")),
+            confidence_score=confidence,
+        )
 
     def _compute_hash(self, file_path: str, content: str, technology: str, findings: List[str]) -> str:
         """Compute SHA-256 hash of inputs to use as cache key."""
@@ -75,7 +116,7 @@ class GeminiClient:
             try:
                 data = json.loads(cached_val)
                 self.db_manager.log_message("INFO", f"Cache hit for file: {file_path}")
-                return FileMigrationSuggestion(file_path=file_path, **data)
+                return self._create_suggestion(file_path, data)
             except Exception as e:
                 self.db_manager.log_message("WARNING", f"Failed to parse cached response for {file_path}: {e}")
 
@@ -105,7 +146,7 @@ class GeminiClient:
                 # Cache response
                 self.db_manager.cache_ai_response(file_hash, prompt, response_text)
 
-                return FileMigrationSuggestion(file_path=file_path, **parsed_json)
+                return self._create_suggestion(file_path, parsed_json)
             except Exception as e:
                 last_exception = e
                 self.db_manager.log_message("WARNING", f"Gemini API attempt {attempt + 1} failed: {e}")
