@@ -10,6 +10,9 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 import sqlite3
 import json
@@ -245,6 +248,127 @@ st.markdown("""
         flex-direction: column;
     }
 
+    /* ── Streamlit Header Background Override ── */
+    header[data-testid="stHeader"], 
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+
+    /* ── Streamlit Built-in Deploy Button ── */
+    div[data-testid="stHeaderAction"] button, 
+    div[data-testid="stHeaderAction"] a,
+    button[data-testid="stHeaderDeployButton"], 
+    a[data-testid="stHeaderDeployButton"],
+    .stDeployButton > button,
+    .stDeployButton > a {
+        background: linear-gradient(135deg, #238636 0%, #2ea44f 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(46, 164, 79, 0.4) !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 6px 16px !important;
+        box-shadow: 0 4px 12px rgba(46, 164, 79, 0.3) !important;
+        transition: all 0.3s ease !important;
+        text-transform: uppercase !important;
+        font-size: 12px !important;
+        letter-spacing: 0.5px !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stHeaderAction"] button:hover, 
+    div[data-testid="stHeaderAction"] a:hover, 
+    button[data-testid="stHeaderDeployButton"]:hover, 
+    a[data-testid="stHeaderDeployButton"]:hover,
+    .stDeployButton > button:hover,
+    .stDeployButton > a:hover {
+        background: linear-gradient(135deg, #2ea44f 0%, #3fb950 100%) !important;
+        box-shadow: 0 6px 16px rgba(63, 185, 80, 0.5) !important;
+        transform: translateY(-1px) !important;
+        border-color: rgba(63, 185, 80, 0.6) !important;
+        color: #ffffff !important;
+    }
+
+    /* ── Streamlit Tabs Overrides ── */
+    button[data-baseweb="tab"] {
+        color: #8b949e !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+        transition: all 0.2s ease !important;
+        background: transparent !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #58a6ff !important;
+        border-bottom: 2px solid #58a6ff !important;
+        background: rgba(88, 166, 255, 0.05) !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #e6edf3 !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    /* ── Streamlit Selectbox Overrides ── */
+    div[data-baseweb="select"] > div {
+        background-color: rgba(22, 27, 34, 0.8) !important;
+        border: 1px solid rgba(48, 54, 61, 0.6) !important;
+        border-radius: 8px !important;
+        color: #e6edf3 !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-baseweb="select"] > div:hover {
+        border-color: rgba(88, 166, 255, 0.4) !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #e6edf3 !important;
+    }
+    div[data-baseweb="popover"] {
+        background-color: #0d1117 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="menu"] {
+        background-color: #0d1117 !important;
+        color: #e6edf3 !important;
+    }
+    div[data-baseweb="option"] {
+        background-color: transparent !important;
+        color: #c9d1d9 !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-baseweb="option"]:hover, 
+    div[data-baseweb="option"][aria-selected="true"] {
+        background-color: rgba(88, 166, 255, 0.15) !important;
+        color: #f0f6fc !important;
+    }
+
+    /* ── Streamlit Custom Button/Download Styling ── */
+    div.stButton > button, 
+    div.stDownloadButton > button {
+        background: linear-gradient(135deg, rgba(31, 111, 235, 0.15) 0%, rgba(136, 58, 234, 0.15) 100%) !important;
+        color: #e6edf3 !important;
+        border: 1px solid rgba(88, 166, 255, 0.3) !important;
+        border-radius: 8px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+    div.stButton > button:hover, 
+    div.stDownloadButton > button:hover {
+        border-color: rgba(88, 166, 255, 0.8) !important;
+        box-shadow: 0 4px 16px rgba(88, 166, 255, 0.2) !important;
+        transform: translateY(-2px) !important;
+        color: #ffffff !important;
+    }
+    div.stButton > button:active, 
+    div.stDownloadButton > button:active {
+        transform: translateY(0) !important;
+    }
+
     /* Hide Streamlit branding */
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
@@ -373,6 +497,16 @@ else:
                 "legacy_packages": ["EntityFramework", "log4net", "Microsoft.AspNet.WebApi", "Microsoft.AspNet.Mvc", "AjaxControlToolkit"],
                 "unsupported_apis": ["HttpContext.Current", "System.Web.UI.Page", "System.ServiceModel.*", "ConfigurationManager", "ViewState", "HttpApplication"],
                 "config_complexity_details": {"config_files_count": 2, "has_system_web_config": True, "has_wcf_config": True},
+            },
+            "project_analysis": {
+                "dependencies": {
+                    "AssemblyReference:System.Web.Extensions": "Local/GAC",
+                    "AssemblyReference:System.Drawing": "Local/GAC",
+                    "AssemblyReference:Microsoft.Office.Interop.Excel": "Local/GAC",
+                    "AssemblyReference:MyCompany.LegacyCore": "Local/GAC",
+                    "EntityFramework": "6.2.0",
+                    "log4net": "2.0.8"
+                }
             },
             "ai_suggestions": {
                 "Services/OrderService.svc.cs": {
@@ -617,6 +751,35 @@ elif menu == "🛡️ Risk Analysis":
     else:
         st.success("No unsupported APIs detected.")
 
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 📦 Hidden Assembly & GAC Dependencies")
+    
+    project_analysis = report_data.get("project_analysis", {})
+    dependencies = project_analysis.get("dependencies", {})
+    
+    # Filter dependencies that are direct GAC/AssemblyReference type
+    hidden_deps = {dep.split(":", 1)[1]: ver for dep, ver in dependencies.items() if dep.startswith("AssemblyReference:")}
+    
+    if hidden_deps:
+        st.markdown("""
+        The following assembly references were detected in the project configuration files (e.g. `.csproj` or `packages.config`) 
+        that represent local libraries or GAC dependencies. These are often **hidden dependencies** during migration because 
+        they may not be natively compatible with .NET 8 or cross-platform environments (like Linux).
+        """)
+        
+        dep_cols = st.columns(2)
+        for idx, (dep, ver) in enumerate(hidden_deps.items()):
+            with dep_cols[idx % 2]:
+                st.markdown(f"""
+                <div class="finding-card" style="--accent: #db6d28; padding: 14px 18px;">
+                    <h5 style="margin: 0; color: #db6d28; font-size: 14px;">📦 {dep}</h5>
+                    <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;"><strong>Source:</strong> Local Assembly / GAC Reference ({ver})</p>
+                    <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;"><strong>Recommendation:</strong> Check compatibility or replace with a modern .NET Standard/8 NuGet package.</p>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.success("No hidden assembly or GAC dependencies detected.")
+
 
 elif menu == "🤖 AI Suggestions":
     st.markdown("""
@@ -702,15 +865,111 @@ elif menu == "📝 Diff Viewer":
             # Inject dark theme into the HTML diff
             dark_css = """
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                
                 body { background: #0d1117 !important; color: #e6edf3 !important; font-family: 'Consolas', monospace; }
                 table.diff { background: #0d1117; border-collapse: collapse; width: 100%; font-size: 12px; }
-                td { padding: 2px 8px; border: 1px solid #21262d; }
+                td { padding: 4px 8px; border: 1px solid #21262d; }
                 .diff_header { background: #161b22; color: #8b949e; }
-                .diff_next { background: #161b22; }
+                
+                /* Diff Navigation Buttons styling */
+                .diff_next { background: #161b22; text-align: center; }
+                .diff_next a {
+                    display: inline-block !important;
+                    padding: 3px 8px !important;
+                    background: linear-gradient(135deg, #1f6feb 0%, #38bdf8 100%) !important;
+                    color: #ffffff !important;
+                    text-decoration: none !important;
+                    border-radius: 4px !important;
+                    font-size: 10px !important;
+                    font-weight: bold !important;
+                    text-transform: uppercase !important;
+                    transition: all 0.2s ease-in-out !important;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
+                    margin: 1px !important;
+                    border: 1px solid rgba(88, 166, 255, 0.4) !important;
+                }
+                .diff_next a:hover {
+                    background: linear-gradient(135deg, #38bdf8 0%, #1f6feb 100%) !important;
+                    transform: scale(1.1) translateY(-1px) !important;
+                    box-shadow: 0 4px 8px rgba(56, 189, 248, 0.4) !important;
+                    color: #ffffff !important;
+                }
+                
                 .diff_add { background: rgba(63,185,80,0.15); color: #3fb950; }
                 .diff_chg { background: rgba(210,153,34,0.15); color: #d29922; }
                 .diff_sub { background: rgba(248,81,73,0.15); color: #f85149; }
                 td:first-child, td:nth-child(2) { color: #484f58; text-align: right; width: 40px; }
+                
+                /* Legends box container styling */
+                table[summary="Legends"] {
+                    display: none !important;
+                }
+                table[summary="Legends"] th {
+                    background: linear-gradient(90deg, #161b22, #21262d) !important;
+                    color: #f0f6fc !important;
+                    font-size: 14px !important;
+                    font-weight: 600 !important;
+                    letter-spacing: 0.5px !important;
+                    padding: 12px 20px !important;
+                    border-bottom: 1px solid rgba(48, 54, 61, 0.6) !important;
+                    text-align: left !important;
+                }
+                table[summary="Legends"] td {
+                    border: none !important;
+                    padding: 16px 20px !important;
+                }
+                
+                /* Inside Legends tables styling */
+                table[summary="Colors"], table[summary="Links"] {
+                    background: transparent !important;
+                    border-collapse: collapse !important;
+                    width: 100% !important;
+                }
+                table[summary="Colors"] th, table[summary="Links"] th {
+                    border-bottom: 1px solid rgba(48, 54, 61, 0.4) !important;
+                    color: #8b949e !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 1px !important;
+                    padding-bottom: 8px !important;
+                    background: transparent !important;
+                }
+                table[summary="Colors"] td {
+                    padding: 6px 12px !important;
+                    border-radius: 6px !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    text-align: center !important;
+                    margin-top: 8px !important;
+                    display: inline-block !important;
+                    width: 110px !important;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+                }
+                
+                table[summary="Colors"] td.diff_add {
+                    background: rgba(63, 185, 80, 0.15) !important;
+                    color: #3fb950 !important;
+                    border: 1px solid rgba(63, 185, 80, 0.3) !important;
+                }
+                table[summary="Colors"] td.diff_chg {
+                    background: rgba(210, 153, 34, 0.15) !important;
+                    color: #d29922 !important;
+                    border: 1px solid rgba(210, 153, 34, 0.3) !important;
+                }
+                table[summary="Colors"] td.diff_sub {
+                    background: rgba(248, 81, 73, 0.15) !important;
+                    color: #f85149 !important;
+                    border: 1px solid rgba(248, 81, 73, 0.3) !important;
+                }
+                
+                table[summary="Links"] td {
+                    color: #c9d1d9 !important;
+                    font-size: 13px !important;
+                    line-height: 1.6 !important;
+                    padding: 8px 0 !important;
+                }
             </style>
             """
             html_content = html_content.replace("</head>", dark_css + "</head>")
