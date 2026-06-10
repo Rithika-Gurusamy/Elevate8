@@ -95,6 +95,7 @@ Modernizing legacy enterprise C# applications to .NET 8 is a major architectural
 ## 📁 Repository Directory Structure
 
 The codebase is organized logically into modular components:
+```text
 .
 ├── backups/                         # Backup storage for rollback operations (isolated from MSBuild)
 └── Project/
@@ -110,3 +111,4 @@ The codebase is organized logically into modular components:
         ├── risk_engine/             # Quantitative risk score mapping and remediation rules
         ├── scanner/                 # AST-like regex-based scanner mapping namespaces & APIs
         └── ui/                      # Streamlit dashboard interface (premium glassmorphic theme)
+```
