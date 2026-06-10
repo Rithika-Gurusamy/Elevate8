@@ -142,6 +142,30 @@ def main_callback(
     pass
 
 
+def _find_project_root(file_path: str) -> str:
+    """Find the project root by looking for a .csproj, packages.config, or .git, defaulting to parent directory."""
+    current_dir = os.path.dirname(os.path.abspath(file_path))
+    while True:
+        has_indicators = False
+        try:
+            for item in os.listdir(current_dir):
+                if item.endswith('.csproj') or item in ('packages.config', '.git'):
+                    has_indicators = True
+                    break
+        except Exception:
+            pass
+        
+        if has_indicators:
+            return current_dir
+            
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:
+            break
+        current_dir = parent_dir
+        
+    return os.path.dirname(os.path.abspath(file_path))
+
+
 @app.command()
 def analyze(
     project_path: str = typer.Argument(..., help="Local path to the legacy .NET project folder"),
@@ -158,13 +182,19 @@ def analyze(
     # ── Validate ───────────────────────────────────────────────────
     if not os.path.exists(project_path):
         console.print(Panel(
-            f"[bold red]Error:[/bold red] Directory [underline]{project_path}[/underline] does not exist.",
+            f"[bold red]Error:[/bold red] Path [underline]{project_path}[/underline] does not exist.",
             border_style="red",
             title="⛔ Path Not Found",
         ))
         raise typer.Exit(code=1)
 
     project_path = os.path.abspath(project_path)
+
+    target_file = None
+    if os.path.isfile(project_path):
+        project_dir = _find_project_root(project_path)
+        target_file = os.path.relpath(project_path, project_dir).replace("\\", "/")
+        project_path = project_dir
 
     db = DatabaseManager(db_path)
     scanner = ScannerEngine()
@@ -182,9 +212,10 @@ def analyze(
     console.print(Rule("[bold blue]Phase 1 · Project Scanner[/bold blue]", style="blue"))
     t0 = time.time()
 
-    with Status("[bold yellow]Scanning project files recursively…[/bold yellow]", console=console, spinner="dots") as status:
+    scan_msg = "[bold yellow]Scanning single file…[/bold yellow]" if target_file else "[bold yellow]Scanning project files recursively…[/bold yellow]"
+    with Status(scan_msg, console=console, spinner="dots") as status:
         try:
-            analysis = scanner.scan_directory(project_path)
+            analysis = scanner.scan_directory(project_path, target_file=target_file)
         except Exception as e:
             console.print(f"[bold red]Scan failed:[/bold red] {str(e)}")
             db.log_message("ERROR", f"Scanning failed: {str(e)}")
@@ -504,6 +535,19 @@ def rollback(
 ):
     """Undo a previously applied migration using the rollback manifest."""
     console.print(BANNER)
+    
+    if not os.path.exists(project_path):
+        console.print(Panel(
+            f"[bold red]Error:[/bold red] Path [underline]{project_path}[/underline] does not exist.",
+            border_style="red",
+            title="⛔ Path Not Found",
+        ))
+        raise typer.Exit(code=1)
+
+    project_path = os.path.abspath(project_path)
+    if os.path.isfile(project_path):
+        project_path = _find_project_root(project_path)
+
     console.print(f"Executing rollback for project: {project_path}")
 
     db = DatabaseManager(db_path)

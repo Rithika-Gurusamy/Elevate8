@@ -93,9 +93,9 @@ class GeminiClient:
             confidence_score=confidence,
         )
 
-    def _compute_hash(self, file_path: str, content: str, technology: str, findings: List[str]) -> str:
+    def _compute_hash(self, file_path: str, content: str, technology: str, findings: List[str], prompt: str) -> str:
         """Compute SHA-256 hash of inputs to use as cache key."""
-        hash_payload = f"{file_path}\n{content}\n{technology}\n{','.join(findings)}"
+        hash_payload = f"{file_path}\n{content}\n{technology}\n{','.join(findings)}\n{prompt}"
         return hashlib.sha256(hash_payload.encode("utf-8")).hexdigest()
 
     def get_migration_suggestion(
@@ -108,7 +108,9 @@ class GeminiClient:
         backoff_factor: float = 2.0,
     ) -> FileMigrationSuggestion:
         """Get migration suggestion for a single file, with caching and retry logic."""
-        file_hash = self._compute_hash(file_path, content, technology, findings)
+        # ── Build prompt first to include in cache key (bust cache on prompt changes) ──
+        prompt = self._build_prompt(file_path, content, technology, findings)
+        file_hash = self._compute_hash(file_path, content, technology, findings, prompt)
 
         # ── Check cache ──────────────────────────────────────────
         cached_val = self.db_manager.get_cached_ai_response(file_hash)
@@ -119,9 +121,6 @@ class GeminiClient:
                 return self._create_suggestion(file_path, data)
             except Exception as e:
                 self.db_manager.log_message("WARNING", f"Failed to parse cached response for {file_path}: {e}")
-
-        # ── Build prompt ─────────────────────────────────────────
-        prompt = self._build_prompt(file_path, content, technology, findings)
 
         # ── Mock mode ────────────────────────────────────────────
         if not self.model:
@@ -135,9 +134,28 @@ class GeminiClient:
                     "INFO", f"Calling Gemini API for {file_path} (attempt {attempt + 1}/{max_retries})"
                 )
 
+                schema = {
+                    "type": "OBJECT",
+                    "properties": {
+                        "summary": {"type": "STRING"},
+                        "migration_strategy": {"type": "STRING"},
+                        "unsupported_apis": {
+                            "type": "ARRAY",
+                            "items": {"type": "STRING"}
+                        },
+                        "dotnet8_equivalent": {"type": "STRING"},
+                        "code_diff_markdown": {"type": "STRING"},
+                        "confidence_score": {"type": "NUMBER"}
+                    },
+                    "required": ["summary", "migration_strategy", "unsupported_apis", "dotnet8_equivalent", "code_diff_markdown", "confidence_score"]
+                }
+
                 response = self.model.generate_content(
                     prompt,
-                    generation_config={"response_mime_type": "application/json"},
+                    generation_config={
+                        "response_mime_type": "application/json",
+                        "response_schema": schema
+                    },
                 )
 
                 response_text = response.text.strip()
@@ -151,7 +169,11 @@ class GeminiClient:
                 last_exception = e
                 self.db_manager.log_message("WARNING", f"Gemini API attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(backoff_factor ** attempt)
+                    sleep_time = backoff_factor ** attempt
+                    if "429" in str(e) or "quota" in str(e).lower() or "resourceexhausted" in type(e).__name__.lower():
+                        sleep_time = 35
+                        self.db_manager.log_message("INFO", f"Rate limit (429) hit. Sleeping {sleep_time} seconds to clear the rate limit window...")
+                    time.sleep(sleep_time)
 
         # ── All retries exhausted ────────────────────────────────
         self.db_manager.log_message("ERROR", f"All Gemini retries failed for {file_path}: {last_exception}")
@@ -290,11 +312,11 @@ Analyze the following legacy .NET Framework source file and generate a precise, 
 
 ## Instructions
 1. Analyze every legacy API usage, pattern, and dependency in this file.
-2. Provide a complete, compilable .NET 8 equivalent — not a stub or skeleton.
+2. Provide a complete, compilable .NET 8 equivalent — not a stub or skeleton. The C# code MUST be beautifully formatted, using proper multiline structure (with actual newline characters \\n) and standard indentation (4 spaces). Do NOT output it as a single-line string.
 3. Preserve ALL business logic, validation rules, and data access patterns.
 4. Use modern .NET 8 best practices: dependency injection, middleware, minimal APIs or controller-based APIs, EF Core where applicable.
 5. Add XML documentation comments on public members in the migrated code.
-6. Generate a meaningful git-style diff showing the conceptual transformation.
+6. Generate a meaningful git-style diff showing the conceptual transformation. The diff MUST be properly structured with actual newline characters \\n for readability.
 
 ## Response Schema
 Return a JSON object with exactly these fields:
@@ -302,8 +324,8 @@ Return a JSON object with exactly these fields:
   "summary": "2-3 sentence description of the file's purpose and which legacy APIs it uses.",
   "migration_strategy": "Step-by-step migration roadmap (numbered steps). Be specific about which APIs to replace and with what.",
   "unsupported_apis": ["List every specific legacy class/method/namespace that must be replaced, e.g. 'System.Web.HttpContext.Current', 'System.ServiceModel.ServiceContractAttribute'"],
-  "dotnet8_equivalent": "The complete, compilable .NET 8 C# code that replaces this file. Include all using statements and namespace declarations.",
-  "code_diff_markdown": "A conceptual git-style diff showing key lines removed (-) and added (+). Focus on the most important transformations.",
+  "dotnet8_equivalent": "The complete, compilable .NET 8 C# code that replaces this file, formatted with proper indentation and newline characters (\\n). Make sure it looks like standard multiline C# source code.",
+  "code_diff_markdown": "A conceptual git-style diff showing key lines removed (-) and added (+), formatted with proper indentation and newline characters (\\n).",
   "confidence_score": 0.85
 }}
 

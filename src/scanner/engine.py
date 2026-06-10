@@ -1,7 +1,7 @@
 import os
 import re
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 from .models import AnalyzedFile, ProjectAnalysis
 
 class ScannerEngine:
@@ -14,7 +14,7 @@ class ScannerEngine:
         # Regexes for WebForms/WCF directives in aspx/asmx/svc
         self.inherits_regex = re.compile(r'(?:Inherits|Service|Class)\s*=\s*["\']([A-Za-z0-9_.]+)["\']', re.IGNORECASE)
 
-    def scan_directory(self, dir_path: str) -> ProjectAnalysis:
+    def scan_directory(self, dir_path: str, target_file: Optional[str] = None) -> ProjectAnalysis:
         """Recursively scan a directory for .NET project files and analyze them."""
         analysis = ProjectAnalysis()
         if not os.path.exists(dir_path):
@@ -22,6 +22,39 @@ class ScannerEngine:
 
         # Supported file extensions
         supported_extensions = {'.cs', '.config', '.csproj', '.aspx', '.asmx', '.svc', '.asax'}
+
+        if target_file:
+            # Single file scan mode
+            file_path = os.path.join(dir_path, target_file)
+            rel_path = target_file
+            _, ext = os.path.splitext(target_file.lower())
+
+            if os.path.basename(target_file).lower() == 'global.asax':
+                analysis.technologies.add('WebForms')
+                if 'Global.asax File' not in analysis.detected_patterns:
+                    analysis.detected_patterns['Global.asax File'] = []
+                analysis.detected_patterns['Global.asax File'].append(rel_path)
+
+            if os.path.basename(target_file).lower() == 'web.config':
+                analysis.technologies.add('ASP.NET Legacy')
+                if 'Web.config File' not in analysis.detected_patterns:
+                    analysis.detected_patterns['Web.config File'] = []
+                analysis.detected_patterns['Web.config File'].append(rel_path)
+
+            if ext in supported_extensions:
+                try:
+                    analyzed_file = self._parse_file(file_path, ext, rel_path)
+                    analysis.files.append(analyzed_file)
+                except Exception as e:
+                    analysis.files.append(AnalyzedFile(
+                        file_path=rel_path,
+                        extension=ext,
+                        detected_patterns=[f"ParseError: {str(e)}"]
+                    ))
+            
+            self._aggregate_analysis(analysis)
+            self._calculate_complexity(analysis)
+            return analysis
 
         for root, dirs, files in os.walk(dir_path):
             # Prune directories we don't want to scan (like backups, bin, obj, git)
