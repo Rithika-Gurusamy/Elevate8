@@ -95,40 +95,18 @@ Modernizing legacy enterprise C# applications to .NET 8 is a major architectural
 ## 📁 Repository Directory Structure
 
 The codebase is organized logically into modular components:
-
-*   📂 [**`Project/src/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src) — Core application files:
-    *   📂 [**`scanner/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/scanner) — AST-like regex scanner mapping using directives, namespaces, and technology flags.
-    *   📂 [**`risk_engine/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/risk_engine) — Weighting engine mapping legacy usage to quantitative risk scores and remediation strategies.
-    *   📂 [**`ai_engine/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/ai_engine) — Interface wrapper managing connections to the Gemini API, JSON schema enforcement, concurrency, rate throttling, and offline mock generation fallbacks.
-    *   📂 [**`migration_engine/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/migration_engine) — Code mapping engine that restructures directory layouts, archives files to a backups database, and maintains rollback safety states.
-    *   📂 [**`reporting/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/reporting) — File generator that compiles Markdown, JSON, and PDF summary sheets, and generates side-by-side HTML diffs.
-    *   📂 [**`ui/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/ui) — Interactive Streamlit application customized with a premium glassmorphic dark theme.
-    *   📂 [**`database/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/database) — SQLite schema manager handling local audit trails, system execution logs, and prompt-response caches.
-    *   📂 [**`cli/`**](file:///c:/Users/grith/Desktop/Infinite/Project/src/cli) — Terminal-based execution driver.
-*   📂 [**`Project/tests/`**](file:///c:/Users/grith/Desktop/Infinite/Project/tests) — Comprehensive unit test suites validating CLI flags, database transactions, offline blueprints, and regex AST mapping.
-*   📂 [**`Project/input_dotnet_legacy_code/`**](file:///c:/Users/grith/Desktop/Infinite/Project/input_dotnet_legacy_code) — Reference legacy folder (containing WebForms, WCF contracts, `Global.asax.cs`, and legacy XML `.config` files) used to validate translation.
-*   📂 [**`Project/output_dotnet8_code/`**](file:///c:/Users/grith/Desktop/Infinite/Project/output_dotnet8_code) — The target directory where modern .NET 8 outputs (Blazor components, Minimal API C# classes, `appsettings.json`, and `Program.cs`) are generated.
-*   📂 [**`backups/`**](file:///c:/Users/grith/Desktop/Infinite/backups) — Target backup folder created outside the compiler path to prevent duplicate C# class definition errors.
-
----
-
-## 🧠 Prompt Engineering Strategy
-
-The translation quality relies on specialized prompt engineering architectures that enforce output constraints and inject targeted technology patterns.
-
-The complete system templates, dynamic classification mappings, offline blueprints, and development debugging logs are documented in our dedicated prompt book:
-👉 **[Read the Complete Prompt Engineering Archive & Design History](file:///c:/Users/grith/Desktop/Infinite/Prompt_Documentation.md)**
-
-### Core Prompt Concepts
-1.  **Strict JSON Output**: The assistant uses standard `response_schema` constraints to enforce JSON schema validation at the model generation layer, eliminating formatting problems like markdown code fences.
-2.  **Context-Aware Injection**: The prompt dynamically appends WCF, WebForms, and MVC instructions depending on matching syntax patterns identified during Phase 1.
-3.  **Hashed Caching**: Prior to calling the LLM, the prompt is hashed along with the file contents. If a match is found in the local SQLite database cache, the API call is bypassed, reducing developer latency and protecting token rate limits.
-
----
-
-## 🏆 Key Technical Differentiators
-
-*   **Offline/Online Resiliency**: Operates seamlessly in offline environments using custom migration blueprints when API keys are omitted.
-*   **Build-Isolation Compliant**: Stores backups in the repository root level (`backups/`) to avoid duplicate C# class declarations within MSBuild compiler walks.
-*   **High-Priority Extensibility**: Prioritizes scanning heuristics dynamically, resolving startup and application configuration mappings before applying generic controller patterns.
-*   **Premium Custom Styling**: Utilizes customized CSS styles to render inputs, buttons, tables, and side-by-side navigations in an elegant, glassmorphic layout.
+.
+├── backups/                         # Backup storage for rollback operations (isolated from MSBuild)
+└── Project/
+    ├── input_dotnet_legacy_code/    # Legacy source files (WebForms, WCF, Global.asax, config)
+    ├── output_dotnet8_code/         # Upgraded output directory (.NET 8 Blazor, Minimal APIs, Program.cs)
+    ├── tests/                       # Automated test suite (CLI, database, parser engines)
+    └── src/                         # Core execution codebase
+        ├── ai_engine/               # Gemini API client, JSON schema enforcement, & offline mock logic
+        ├── cli/                     # CLI execution driver and CLI command entry points
+        ├── database/                # SQLite local audit logging, execution logs, & prompt caching
+        ├── migration_engine/        # Code rewriter, path mapper, and rollback manifest tracker
+        ├── reporting/               # HTML diff viewer, PDF summary generators, and JSON reports
+        ├── risk_engine/             # Quantitative risk score mapping and remediation rules
+        ├── scanner/                 # AST-like regex-based scanner mapping namespaces & APIs
+        └── ui/                      # Streamlit dashboard interface (premium glassmorphic theme)
