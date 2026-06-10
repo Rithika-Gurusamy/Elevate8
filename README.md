@@ -88,7 +88,8 @@ Modernizing legacy enterprise C# applications to .NET 8 is a major architectural
 
 ## 📐 System Architecture
 
-![Elevate8 System Architecture](system_architecture.png)
+<img width="1024" height="682" alt="image" src="https://github.com/user-attachments/assets/60566f29-1182-4a88-a7ee-454f620ae184" />
+
 
 
 ## 📁 Repository Directory Structure
