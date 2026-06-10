@@ -40,7 +40,8 @@ def test_cache_hit_avoids_api_call(mock_db):
     technology = "XML Configuration"
     findings = ["Legacy config"]
     
-    file_hash = client._compute_hash(file_path, content, technology, findings)
+    prompt = client._build_prompt(file_path, content, technology, findings)
+    file_hash = client._compute_hash(file_path, content, technology, findings, prompt)
     
     # Store mocked response in database cache
     cached_data = {
@@ -91,7 +92,8 @@ def test_api_call_and_caching(mock_gen_model_class, mock_db):
     findings = ["WCF Service Contract"]
     
     # Ensure cache is empty
-    file_hash = client._compute_hash(file_path, content, technology, findings)
+    prompt = client._build_prompt(file_path, content, technology, findings)
+    file_hash = client._compute_hash(file_path, content, technology, findings, prompt)
     assert mock_db.get_cached_ai_response(file_hash) is None
 
     # Call method
